@@ -8,8 +8,8 @@ if oh.Cache["ui/Main"] then
 	return Interface
 end
 
-import("ui/controls/TabSelector")
-local MessageBox, MessageType = import("ui/controls/MessageBox")
+import("ui/Controls/TabSelector")
+local MessageBox, MessageType = import("ui/Controls/MessageBox")
 
 local RemoteSpy
 local ClosureSpy
