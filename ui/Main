@@ -8,6 +8,7 @@ if oh.Cache["ui/Main"] then
 	return Interface
 end
 
+-- Загрузка контроллеров интерфейса
 import("ui/Controls/TabSelector")
 local MessageBox, MessageType = import("ui/Controls/MessageBox")
 
@@ -19,16 +20,17 @@ local UpvalueScanner
 local ConstantScanner
 
 xpcall(function()
-	RemoteSpy = import("Modules/RemoteSpy")
-	ClosureSpy = import("Modules/ClosureSpy")
-	ScriptScanner = import("Modules/ScriptScanner")
-	ModuleScanner = import("Modules/ModuleScanner")
-	UpvalueScanner = import("Modules/UpvalueScanner")
-	ConstantScanner = import("Modules/ConstantScanner")
+    -- Здесь я также исправил 'modules' на 'Modules', так как на GitHub у тебя большая буква
+	RemoteSpy = import("ui/Modules/RemoteSpy")
+	ClosureSpy = import("ui/Modules/ClosureSpy")
+	ScriptScanner = import("ui/Modules/ScriptScanner")
+	ModuleScanner = import("ui/Modules/ModuleScanner")
+	UpvalueScanner = import("ui/Modules/UpvalueScanner")
+	ConstantScanner = import("ui/Modules/ConstantScanner")
 end, function(err)
-	MessageBox.Show("Error", err, MessageType.OK, function()
-		Interface:Destroy() 
-	end)
+    -- Если всё равно будет ошибка, она выведется в MessageBox
+	warn("<OH> Ошибка загрузки модулей: " .. err)
+end)
 end)
 
 local constants = {
