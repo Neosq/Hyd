@@ -2,18 +2,18 @@ local TextService = game:GetService("TextService")
 local TweenService = game:GetService("TweenService")
 
 local ClosureSpy = {}
-local Methods = import("modules/ClosureSpy")
+local Methods = import("Modules/ClosureSpy")
 
 if not hasMethods(Methods.RequiredMethods) then
     return ClosureSpy
 end
 
-local Prompt = import("ui/controls/Prompt")
-local CheckBox = import("ui/controls/CheckBox")
-local Dropdown = import("ui/controls/Dropdown")
-local List, ListButton = import("ui/controls/List")
-local MessageBox, MessageType = import("ui/controls/MessageBox")
-local ContextMenu, ContextMenuButton = import("ui/controls/ContextMenu")
+local Prompt = import("ui/Controls/Prompt")
+local CheckBox = import("ui/Controls/CheckBox")
+local Dropdown = import("ui/Controls/Dropdown")
+local List, ListButton = import("ui/Controls/List")
+local MessageBox, MessageType = import("ui/Controls/MessageBox")
+local ContextMenu, ContextMenuButton = import("ui/Controls/ContextMenu")
 
 local Base = import("rbxassetid://11389137937").Base
 local Assets = import("rbxassetid://5042114982").ClosureSpy
