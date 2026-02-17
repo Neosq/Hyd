@@ -1,19 +1,19 @@
 local TextService = game:GetService("TextService")
 
 local ConstantScanner = {}
-local ClosureSpy = import("modules/ClosureSpy")
-local Methods = import("modules/ConstantScanner")
+local ClosureSpy = import("Modules/ClosureSpy")
+local Methods = import("Modules/ConstantScanner")
 
 if not hasMethods(Methods.RequiredMethods) then
     return ConstantScanner
 end
 
-local Constant = import("objects/Constant")
+local Constant = import("Objects/Constant")
 
-local List, ListButton = import("ui/controls/List")
-local MessageBox, MessageType = import("ui/controls/MessageBox")
-local ContextMenu, ContextMenuButton = import("ui/controls/ContextMenu")
-local TabSelector = import("ui/controls/TabSelector")
+local List, ListButton = import("ui/Controls/List")
+local MessageBox, MessageType = import("ui/Controls/MessageBox")
+local ContextMenu, ContextMenuButton = import("ui/Controls/ContextMenu")
+local TabSelector = import("ui/Controls/TabSelector")
 
 local Page = import("rbxassetid://11389137937").Base.Body.Pages.ConstantScanner
 local Assets = import("rbxassetid://5042114982").ConstantScanner
