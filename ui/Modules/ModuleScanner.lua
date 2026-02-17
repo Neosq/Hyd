@@ -1,13 +1,13 @@
 local ModuleScanner = {}
-local Methods = import("modules/ModuleScanner")
+local Methods = import("Modules/ModuleScanner")
 
 if not hasMethods(Methods.RequiredMethods) then
     return ModuleScanner
 end
 
-local List, ListButton = import("ui/controls/List")
-local MessageBox, MessageType = import("ui/controls/MessageBox")
-local ContextMenu, ContextMenuButton = import("ui/controls/ContextMenu")
+local List, ListButton = import("ui/Controls/List")
+local MessageBox, MessageType = import("ui/Controls/MessageBox")
+local ContextMenu, ContextMenuButton = import("ui/Controls/ContextMenu")
 
 local Page = import("rbxassetid://11389137937").Base.Body.Pages.ModuleScanner
 local Assets = import("rbxassetid://5042114982").ModuleScanner
