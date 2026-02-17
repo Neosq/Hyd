@@ -2,22 +2,22 @@ local RunService = game:GetService("RunService")
 local TextService = game:GetService("TextService")
 
 local UpvalueScanner = {}
-local ClosureSpy = import("modules/ClosureSpy")
-local Methods = import("modules/UpvalueScanner")
+local ClosureSpy = import("Modules/ClosureSpy")
+local Methods = import("Modules/UpvalueScanner")
 
 if not hasMethods(Methods.RequiredMethods) then
     return UpvalueScanner
 end
 
-local Upvalue = import("objects/Upvalue")
+local Upvalue = import("Objects/Upvalue")
 
-local Prompt = import("ui/controls/Prompt")
-local CheckBox = import("ui/controls/CheckBox")
-local Dropdown = import("ui/controls/Dropdown")
-local List, ListButton = import("ui/controls/List")
-local TabSelector = import("ui/controls/TabSelector")
-local MessageBox, MessageType = import("ui/controls/MessageBox")
-local ContextMenu, ContextMenuButton = import("ui/controls/ContextMenu")
+local Prompt = import("ui/Controls/Prompt")
+local CheckBox = import("ui/Controls/CheckBox")
+local Dropdown = import("ui/Controls/Dropdown")
+local List, ListButton = import("ui/Controls/List")
+local TabSelector = import("ui/Controls/TabSelector")
+local MessageBox, MessageType = import("ui/Controls/MessageBox")
+local ContextMenu, ContextMenuButton = import("ui/Controls/ContextMenu")
 
 local Base = import("rbxassetid://11389137937").Base
 local Assets = import("rbxassetid://5042114982").UpvalueScanner
