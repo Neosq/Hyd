@@ -11,25 +11,24 @@ function environment.import(asset)
     
     local baseUrl = "https://raw.githubusercontent.com/" .. user .. "/Hyd/" .. branch .. "/"
     
-    -- Авто-исправление путей: приводим к твоему формату с Большой Буквы
-    local fixedAsset = asset:gsub("^methods/", "Methods/")
-                            :gsub("^objects/", "Objects/")
+    -- ПРАВИЛО ПЕРЕВОДА: Исправляем пути из старых модулей под твой репозиторий
+    -- Превращаем маленькие буквы в большие там, где у тебя папки с большой
+    local fixedAsset = asset:gsub("^objects/", "Objects/")
+                            :gsub("^methods/", "Methods/")
                             :gsub("^ui/controls/", "ui/Controls/")
                             :gsub("^ui/modules/", "ui/Modules/")
+    
+    -- Если ты добавил .lua ко всем файлам, принудительно добавляем его здесь
+    local url = baseUrl .. fixedAsset
+    if not url:find("%.lua$") then
+        url = url .. ".lua"
+    end
 
-    local attempts = {
-        baseUrl .. fixedAsset,
-        baseUrl .. fixedAsset .. ".lua",
-        baseUrl .. asset, -- на случай если путь был верным
-        baseUrl .. asset .. ".lua"
-    }
-
-    local success, result
-    for _, url in ipairs(attempts) do
-        success, result = pcall(game.HttpGet, game, url)
-        if success and result and not result:find("404") and #result > 10 then
-            break 
-        end
+    local success, result = pcall(game.HttpGet, game, url)
+    
+    -- Если с большой буквы не нашло, пробуем как есть (мало ли)
+    if not success or result:find("404") then
+        success, result = pcall(game.HttpGet, game, baseUrl .. asset .. ".lua")
     end
 
     if success and result and not result:find("404") and #result > 10 then
@@ -39,32 +38,32 @@ function environment.import(asset)
             importCache[asset] = content
             return unpack(content)
         else
-            warn("<OH> Ошибка синтаксиса в " .. asset .. ": " .. err)
-            error("LUA_ERR")
+            warn("<OH> Ошибка в коде " .. asset .. ": " .. err)
+            return
         end
     else
-        warn("<OH> 404: Не найден " .. asset .. " | Ссылка: " .. attempts[1])
-        error("HTTP_404")
+        warn("<OH> 404 Не найден файл: " .. url)
+        error("STOP")
     end
 end
 
--- Инициализация системы
+-- Базовая настройка среды
 local globalMethods = {
     checkCaller = checkcaller, newCClosure = newcclosure, hookFunction = hookfunction or detour_function,
     getGc = getgc, getInfo = debug.getinfo, getSenv = getsenv, getMenv = getmenv,
     getConnections = get_signal_cons or getconnections, getHui = gethui or get_hidden_gui,
     setReadOnly = setreadonly, isReadOnly = isreadonly, readFile = readfile, writeFile = writefile
 }
-
 environment.oh = { Events = {}, Hooks = {}, Cache = importCache, Methods = globalMethods, Exit = function() end }
-
 for k, v in pairs(globalMethods) do environment[k] = v end
 environment.import = environment.import
 
--- Загрузка
+-- ЗАГРУЗКА (Проверь, чтобы эти файлы на Гитхабе были с .lua)
 import("aux")
 import("Methods/string")
 import("Methods/table")
 import("Methods/userdata")
 import("Methods/environment")
-import("ui/Main")
+
+-- ВАЖНО: Если файл называется Main.lua и лежит в ui/
+import("ui/Main") 
