@@ -1,144 +1,70 @@
 local environment = assert(getgenv, "<OH> ~ Your exploit is not supported")()
 
-if oh then
-    oh.Exit()
-end
+if oh then oh.Exit() end
 
 local user = "Neosq" 
 local branch = "main"
 local importCache = {}
 
-local function useMethods(module)
-    for name, method in pairs(module) do
-        if method then
-            environment[name] = method
-        end
-    end
-end
-
-local globalMethods = {
-    checkCaller = checkcaller,
-    newCClosure = newcclosure,
-    hookFunction = hookfunction or detour_function,
-    getGc = getgc or get_gc_objects,
-    getInfo = debug.getinfo or getinfo,
-    getSenv = getsenv,
-    getMenv = getmenv or getsenv,
-    getContext = getthreadcontext or get_thread_context or (syn and syn.get_thread_identity),
-    getConnections = get_signal_cons or getconnections,
-    getScriptClosure = getscriptclosure or get_script_function,
-    getNamecallMethod = getnamecallmethod or get_namecall_method,
-    getCallingScript = getcallingscript or get_calling_script,
-    getLoadedModules = getloadedmodules or get_loaded_modules,
-    getConstants = debug.getconstants or getconstants or getconsts,
-    getUpvalues = debug.getupvalues or getupvalues or getupvals,
-    getProtos = debug.getprotos or getprotos,
-    getStack = debug.getstack or getstack,
-    getConstant = debug.getconstant or getconstant or getconst,
-    getUpvalue = debug.getupvalue or getupvalue or getupval,
-    getProto = debug.getproto or getproto,
-    getMetatable = getrawmetatable or debug.getmetatable,
-    getHui = get_hidden_gui or gethui,
-    setClipboard = setclipboard or writeclipboard,
-    setConstant = debug.setconstant or setconstant or setconst,
-    setContext = setthreadcontext or set_thread_context or (syn and syn.set_thread_identity),
-    setUpvalue = debug.setupvalue or setupvalue or setupval,
-    setStack = debug.setstack or setstack,
-    setReadOnly = setreadonly or (make_writeable and function(table, readonly) if readonly then make_readonly(table) else make_writeable(table) end end),
-    isLClosure = islclosure or is_l_closure or (iscclosure and function(closure) return not iscclosure(closure) end),
-    isReadOnly = isreadonly or is_readonly,
-    isXClosure = is_synapse_function or issentinelclosure or is_protosmasher_closure or is_sirhurt_closure or iselectronfunction or istempleclosure or checkclosure,
-    hookMetaMethod = hookmetamethod or (hookfunction and function(object, method, hook) return hookfunction(getMetatable(object)[method], hook) end),
-    readFile = readfile,
-    writeFile = writefile,
-    makeFolder = makefolder,
-    isFolder = isfolder,
-    isFile = isfile,
-}
-
-environment.oh = {
-    Events = {},
-    Hooks = {},
-    Cache = importCache,
-    Methods = globalMethods,
-    Constants = {
-        Types = {
-            ["nil"] = "rbxassetid://4800232219",
-            table = "rbxassetid://4666594276",
-            string = "rbxassetid://4666593882",
-            number = "rbxassetid://4666593882",
-            boolean = "rbxassetid://4666593882",
-            userdata = "rbxassetid://4666594723",
-            vector = "rbxassetid://4666594723",
-            ["function"] = "rbxassetid://4666593447",
-            ["thread"] = "rbxassetid://4666593447",
-            ["integral"] = "rbxassetid://4666593882"
-        }
-    },
-    Exit = function()
-        for _i, event in pairs(oh.Events) do event:Disconnect() end
-        local ui = importCache["rbxassetid://11389137937"]
-        if ui then unpack(ui):Destroy() end
-    end
-}
-
 function environment.import(asset)
     if importCache[asset] then return unpack(importCache[asset]) end
     
-    if asset:find("rbxassetid://") then
-        local content = { game:GetObjects(asset)[1] }
-        importCache[asset] = content
-        return unpack(content)
-    else
-        local baseUrl = "https://raw.githubusercontent.com/" .. user .. "/Hyd/" .. branch .. "/"
-        
-        -- Массив вариантов путей для перебора
-        local attempts = {
-            baseUrl .. asset,
-            baseUrl .. asset .. ".lua",
-            baseUrl .. asset:gsub("Controls", "controls"),
-            baseUrl .. asset:gsub("Modules", "modules"),
-            baseUrl .. asset:gsub("Methods", "methods")
-        }
+    local baseUrl = "https://raw.githubusercontent.com/" .. user .. "/Hyd/" .. branch .. "/"
+    
+    -- Авто-исправление путей: приводим к твоему формату с Большой Буквы
+    local fixedAsset = asset:gsub("^methods/", "Methods/")
+                            :gsub("^objects/", "Objects/")
+                            :gsub("^ui/controls/", "ui/Controls/")
+                            :gsub("^ui/modules/", "ui/Modules/")
 
-        local success, result
-        for _, url in ipairs(attempts) do
-            success, result = pcall(game.HttpGet, game, url)
-            if success and result and not result:find("404") and #result > 10 then
-                break 
-            end
-        end
+    local attempts = {
+        baseUrl .. fixedAsset,
+        baseUrl .. fixedAsset .. ".lua",
+        baseUrl .. asset, -- на случай если путь был верным
+        baseUrl .. asset .. ".lua"
+    }
 
+    local success, result
+    for _, url in ipairs(attempts) do
+        success, result = pcall(game.HttpGet, game, url)
         if success and result and not result:find("404") and #result > 10 then
-            local f, err = loadstring(result, asset)
-            if f then
-                local content = { f() }
-                importCache[asset] = content
-                return unpack(content)
-            else
-                warn("<OH> Ошибка компиляции модуля " .. asset .. ": " .. err)
-                error("Compile Error")
-            end
-        else
-            print("------------------------------------------")
-            warn("<OH> КРИТИЧЕСКАЯ ОШИБКА: Файл не найден!")
-            print("Ассет: " .. asset)
-            print("Проверь эту ссылку: " .. attempts[1])
-            print("------------------------------------------")
-            error("HTTP 404")
+            break 
         end
+    end
+
+    if success and result and not result:find("404") and #result > 10 then
+        local f, err = loadstring(result, asset)
+        if f then
+            local content = { f() }
+            importCache[asset] = content
+            return unpack(content)
+        else
+            warn("<OH> Ошибка синтаксиса в " .. asset .. ": " .. err)
+            error("LUA_ERR")
+        end
+    else
+        warn("<OH> 404: Не найден " .. asset .. " | Ссылка: " .. attempts[1])
+        error("HTTP_404")
     end
 end
 
-useMethods(globalMethods)
-useMethods({ import = environment.import })
+-- Инициализация системы
+local globalMethods = {
+    checkCaller = checkcaller, newCClosure = newcclosure, hookFunction = hookfunction or detour_function,
+    getGc = getgc, getInfo = debug.getinfo, getSenv = getsenv, getMenv = getmenv,
+    getConnections = get_signal_cons or getconnections, getHui = gethui or get_hidden_gui,
+    setReadOnly = setreadonly, isReadOnly = isreadonly, readFile = readfile, writeFile = writefile
+}
 
--- Загрузка базовых компонентов
+environment.oh = { Events = {}, Hooks = {}, Cache = importCache, Methods = globalMethods, Exit = function() end }
+
+for k, v in pairs(globalMethods) do environment[k] = v end
+environment.import = environment.import
+
+-- Загрузка
 import("aux")
-useMethods(import("Methods/string"))
-useMethods(import("Methods/table"))
-useMethods(import("Methods/userdata"))
-useMethods(import("Methods/environment"))
-
--- Загрузка основного интерфейса
+import("Methods/string")
+import("Methods/table")
+import("Methods/userdata")
+import("Methods/environment")
 import("ui/Main")
