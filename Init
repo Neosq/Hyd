@@ -8,11 +8,11 @@ local user = "Neosq"
 local branch = "main"
 local importCache = {}
 
+-- Функция импорта с поддержкой исправлений путей и расширений
 function environment.import(asset)
     if importCache[asset] then return unpack(importCache[asset]) end
     
     local content
-    -- 1. Обработка объектов Roblox (исправляет ошибку со скриншота №3)
     if asset:find("rbxassetid://") then
         local success, result = pcall(function()
             return game:GetObjects(asset)[1]
@@ -22,34 +22,33 @@ function environment.import(asset)
             content = { result }
             importCache[asset] = content
             return unpack(content)
-        else
-            warn("<OH> Ошибка загрузки ассета Roblox: " .. asset)
-            error("ASSET_NOT_FOUND")
         end
     else
-        -- 2. Обработка файлов с GitHub
         local baseUrl = "https://raw.githubusercontent.com/" .. user .. "/Hyd/" .. branch .. "/"
         
-        -- Исправляем пути под твой репозиторий (Маленькие буквы -> Большие)
+        -- Массив для перебора вариантов (Регистр + Расширение)
         local fixedAsset = asset:gsub("^objects/", "Objects/")
                                 :gsub("^methods/", "Methods/")
                                 :gsub("^ui/controls/", "ui/Controls/")
                                 :gsub("^ui/modules/", "ui/Modules/")
+                                :gsub("^modules/", "Modules/")
 
-        -- Формируем финальную ссылку (добавляем .lua, если его нет)
-        local url = baseUrl .. fixedAsset
-        if not url:find("%.lua$") then
-            url = url .. ".lua"
+        local attempts = {
+            baseUrl .. fixedAsset .. ".lua",
+            baseUrl .. fixedAsset,
+            baseUrl .. asset .. ".lua",
+            baseUrl .. asset
+        }
+
+        local success, result
+        for _, url in ipairs(attempts) do
+            success, result = pcall(game.HttpGet, game, url)
+            if success and result and not (type(result) == "string" and result:find("404")) and #result > 10 then
+                break 
+            end
         end
 
-        local success, result = pcall(game.HttpGet, game, url)
-        
-        -- Запасной вариант: если с .lua не нашло, пробуем без него
-        if not success or (type(result) == "string" and result:find("404")) then
-            success, result = pcall(game.HttpGet, game, baseUrl .. fixedAsset)
-        end
-
-        if success and result and not (type(result) == "string" and result:find("404")) and #result > 10 then
+        if success and result and not (type(result) == "string" and result:find("404")) then
             local f, err = loadstring(result, asset)
             if f then
                 content = { f() }
@@ -57,50 +56,62 @@ function environment.import(asset)
                 return unpack(content)
             else
                 warn("<OH> Ошибка компиляции модуля " .. asset .. ": " .. err)
-                error("LUA_COMPILE_ERROR")
             end
-        else
-            -- Вывод подробной отладки в консоль F9
-            print("-----------------------------------------")
-            warn("<OH> ОШИБКА 404: Файл не найден!")
-            print("Ассет (Asset): " .. asset)
-            print("Пытался загрузить тут: " .. url)
-            print("-----------------------------------------")
-            error("HTTP_404")
         end
     end
+    warn("<OH> Не удалось загрузить ассет: " .. asset)
+    return nil
 end
 
--- Настройка глобальных методов
+-- Продвинутый поиск методов инжектора (Адаптация под любые читы)
 local globalMethods = {
-    checkCaller = checkcaller,
-    newCClosure = newcclosure,
-    hookFunction = hookfunction or detour_function,
-    getGc = getgc,
-    getInfo = debug.getinfo,
+    checkCaller = checkcaller or check_caller or is_protosmasher_caller,
+    newCClosure = newcclosure or new_c_closure,
+    hookFunction = hookfunction or detour_function or replaceclosure or hook_function,
+    getGc = getgc or get_gc_objects or debug.getgc,
+    getInfo = debug.getinfo or getinfo,
     getSenv = getsenv,
-    getMenv = getmenv,
-    getContext = getthreadcontext or (syn and syn.get_thread_identity),
-    getConnections = getconnections or get_signal_cons,
-    getScriptClosure = getscriptclosure,
-    getNamecallMethod = getnamecallmethod,
-    getCallingScript = getcallingscript,
-    getLoadedModules = getloadedmodules,
-    getConstants = debug.getconstants or getconstants,
-    getUpvalues = debug.getupvalues or getupvalues,
+    getMenv = getmenv or getsenv,
+    getContext = getthreadcontext or get_thread_identity or get_thread_context or (syn and syn.get_thread_identity),
+    getConnections = getconnections or get_signal_cons or get_connections,
+    getScriptClosure = getscriptclosure or get_script_function or get_script_closure,
+    getNamecallMethod = getnamecallmethod or get_namecall_method,
+    getCallingScript = getcallingscript or get_calling_script,
+    getLoadedModules = getloadedmodules or get_loaded_modules,
+    getConstants = debug.getconstants or getconstants or getconsts,
+    getUpvalues = debug.getupvalues or getupvalues or getupvals,
     getProtos = debug.getprotos or getprotos,
+    getStack = debug.getstack or getstack,
+    getConstant = debug.getconstant or getconstant or getconst,
+    getUpvalue = debug.getupvalue or getupvalue or getupval,
+    getProto = debug.getproto or getproto,
     getMetatable = getrawmetatable or debug.getmetatable,
-    getHui = gethui or get_hidden_gui,
-    setClipboard = setclipboard,
-    setReadOnly = setreadonly,
-    isReadOnly = isreadonly,
+    getHui = gethui or get_hidden_gui or (function() return game:GetService("CoreGui") end),
+    setClipboard = setclipboard or write_clipboard or set_clipboard,
+    setConstant = debug.setconstant or setconstant or setconst,
+    setContext = setthreadcontext or set_thread_identity or set_thread_context or (syn and syn.set_thread_identity),
+    setUpvalue = debug.setupvalue or setupvalue or setupval,
+    setStack = debug.setstack or setstack,
+    setReadOnly = setreadonly or make_writeable or (make_readonly and function(t, r) if r then make_readonly(t) else make_writeable(t) end end),
+    isLClosure = islclosure or is_l_closure or (iscclosure and function(f) return not iscclosure(f) end),
+    isReadOnly = isreadonly or is_readonly,
+    isXClosure = is_synapse_function or issentinelclosure or is_protosmasher_closure or is_sirhurt_closure or iselectronfunction or istempleclosure or checkclosure,
     readFile = readfile,
     writeFile = writefile,
     makeFolder = makefolder,
+    isFolder = isfolder,
     isFile = isfile,
-    isFolder = isfolder
 }
 
+-- Специальный "аварийный" хук для MetaMethod (если инжектор его не имеет)
+globalMethods.hookMetaMethod = hookmetamethod or hook_metamethod or (function(obj, method, func) 
+    local mt = globalMethods.getMetatable(obj)
+    if mt and mt[method] then
+        return globalMethods.hookFunction(mt[method], func)
+    end
+end)
+
+-- Создание глобальной таблицы 'oh'
 environment.oh = {
     Events = {},
     Hooks = {},
@@ -124,7 +135,7 @@ environment.oh = {
     end
 }
 
--- Делаем методы доступными глобально
+-- Регистрация всех методов в глобальной среде (важно для работы вкладок)
 for name, method in pairs(globalMethods) do
     environment[name] = method
 end
@@ -137,5 +148,5 @@ import("Methods/table")
 import("Methods/userdata")
 import("Methods/environment")
 
--- Загружаем основной интерфейс (убедись, что на GitHub это ui/Main.lua)
+-- Загрузка интерфейса
 import("ui/Main")
