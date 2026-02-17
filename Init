@@ -85,41 +85,47 @@ environment.oh = {
 function environment.import(asset)
     if importCache[asset] then return unpack(importCache[asset]) end
     
-    local content
     if asset:find("rbxassetid://") then
-        content = { game:GetObjects(asset)[1] }
+        local content = { game:GetObjects(asset)[1] }
         importCache[asset] = content
         return unpack(content)
     else
         local baseUrl = "https://raw.githubusercontent.com/" .. user .. "/Hyd/" .. branch .. "/"
-        local url = baseUrl .. asset
         
-        -- Попытка загрузки
-        local success, result = pcall(game.HttpGet, game, url)
-        
-        -- Если не удалось (404), пробуем добавить .lua
-        if not success or result:find("404") then
-            success, result = pcall(game.HttpGet, game, url .. ".lua")
+        -- Массив вариантов путей для перебора
+        local attempts = {
+            baseUrl .. asset,
+            baseUrl .. asset .. ".lua",
+            baseUrl .. asset:gsub("Controls", "controls"),
+            baseUrl .. asset:gsub("Modules", "modules"),
+            baseUrl .. asset:gsub("Methods", "methods")
+        }
+
+        local success, result
+        for _, url in ipairs(attempts) do
+            success, result = pcall(game.HttpGet, game, url)
+            if success and result and not result:find("404") and #result > 10 then
+                break 
+            end
         end
 
-        if success and not result:find("404") then
+        if success and result and not result:find("404") and #result > 10 then
             local f, err = loadstring(result, asset)
             if f then
-                content = { f() }
+                local content = { f() }
                 importCache[asset] = content
                 return unpack(content)
             else
-                warn("<OH> Ошибка компиляции в файле " .. asset .. ": " .. err)
+                warn("<OH> Ошибка компиляции модуля " .. asset .. ": " .. err)
                 error("Compile Error")
             end
         else
-            -- ОТЛАДЧИК: Если файл не найден, выводим инфо
-            print("-----------------------------------------")
-            warn("<OH> ОШИБКА 404: Файл не найден!")
-            print("Актив (Asset): " .. asset)
-            print("Ожидаемая ссылка: " .. url)
-            print("-----------------------------------------")
-            error("HTTP 404 - Check F9 Console")
+            print("------------------------------------------")
+            warn("<OH> КРИТИЧЕСКАЯ ОШИБКА: Файл не найден!")
+            print("Ассет: " .. asset)
+            print("Проверь эту ссылку: " .. attempts[1])
+            print("------------------------------------------")
+            error("HTTP 404")
         end
     end
 end
@@ -127,11 +133,12 @@ end
 useMethods(globalMethods)
 useMethods({ import = environment.import })
 
--- Здесь важно соблюдать регистр как на GitHub (Methods или methods)
+-- Загрузка базовых компонентов
 import("aux")
 useMethods(import("Methods/string"))
 useMethods(import("Methods/table"))
 useMethods(import("Methods/userdata"))
 useMethods(import("Methods/environment"))
 
+-- Загрузка основного интерфейса
 import("ui/Main")
