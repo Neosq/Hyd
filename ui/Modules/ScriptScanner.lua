@@ -2,15 +2,15 @@ local TextService = game:GetService("TextService")
 local TweenService = game:GetService("TweenService")
 
 local ScriptScanner = {}
-local Methods = import("modules/ScriptScanner")
+local Methods = import("Modules/ScriptScanner")
 
 if not hasMethods(Methods.RequiredMethods) then
     return ScriptScanner
 end
 
-local List, ListButton = import("ui/controls/List")
-local MessageBox, MessageType = import("ui/controls/MessageBox")
-local ContextMenu, ContextMenuButton = import("ui/controls/ContextMenu")
+local List, ListButton = import("ui/Controls/List")
+local MessageBox, MessageType = import("ui/Controls/MessageBox")
+local ContextMenu, ContextMenuButton = import("ui/Controls/ContextMenu")
 
 local Page = import("rbxassetid://11389137937").Base.Body.Pages.ScriptScanner
 local Assets = import("rbxassetid://5042114982").ScriptScanner
