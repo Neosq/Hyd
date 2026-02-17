@@ -6,15 +6,15 @@ local Base = import("rbxassetid://11389137937").Base
 local Tabs = Base.Tabs.Container
 local Pages = Base.Body.Pages
 
-local MessageBox, MessageType = import("ui/controls/MessageBox")
+local MessageBox, MessageType = import("ui/Controls/MessageBox")
 
 local requiredMethods = {
-    ConstantScanner = import("modules/ConstantScanner").RequiredMethods,
-    UpvalueScanner = import("modules/UpvalueScanner").RequiredMethods,
-    ScriptScanner = import("modules/ScriptScanner").RequiredMethods,
-    ModuleScanner = import("modules/ModuleScanner").RequiredMethods,
-    ClosureSpy = import("modules/ClosureSpy").RequiredMethods,
-    RemoteSpy = import("modules/RemoteSpy").RequiredMethods
+    ConstantScanner = import("Modules/ConstantScanner").RequiredMethods,
+    UpvalueScanner = import("Modules/UpvalueScanner").RequiredMethods,
+    ScriptScanner = import("Modules/ScriptScanner").RequiredMethods,
+    ModuleScanner = import("Modules/ModuleScanner").RequiredMethods,
+    ClosureSpy = import("Modules/ClosureSpy").RequiredMethods,
+    RemoteSpy = import("Modules/RemoteSpy").RequiredMethods
 }
 
 local constants = {
