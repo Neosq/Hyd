@@ -1,6 +1,8 @@
 local environment = assert(getgenv, "<OH> ~ Your exploit is not supported")()
 
-if oh then oh.Exit() end
+if oh then 
+    oh.Exit() 
+end
 
 local user = "Neosq" 
 local branch = "main"
@@ -9,61 +11,131 @@ local importCache = {}
 function environment.import(asset)
     if importCache[asset] then return unpack(importCache[asset]) end
     
-    local baseUrl = "https://raw.githubusercontent.com/" .. user .. "/Hyd/" .. branch .. "/"
-    
-    -- ПРАВИЛО ПЕРЕВОДА: Исправляем пути из старых модулей под твой репозиторий
-    -- Превращаем маленькие буквы в большие там, где у тебя папки с большой
-    local fixedAsset = asset:gsub("^objects/", "Objects/")
-                            :gsub("^methods/", "Methods/")
-                            :gsub("^ui/controls/", "ui/Controls/")
-                            :gsub("^ui/modules/", "ui/Modules/")
-    
-    -- Если ты добавил .lua ко всем файлам, принудительно добавляем его здесь
-    local url = baseUrl .. fixedAsset
-    if not url:find("%.lua$") then
-        url = url .. ".lua"
-    end
-
-    local success, result = pcall(game.HttpGet, game, url)
-    
-    -- Если с большой буквы не нашло, пробуем как есть (мало ли)
-    if not success or result:find("404") then
-        success, result = pcall(game.HttpGet, game, baseUrl .. asset .. ".lua")
-    end
-
-    if success and result and not result:find("404") and #result > 10 then
-        local f, err = loadstring(result, asset)
-        if f then
-            local content = { f() }
+    local content
+    -- 1. Обработка объектов Roblox (исправляет ошибку со скриншота №3)
+    if asset:find("rbxassetid://") then
+        local success, result = pcall(function()
+            return game:GetObjects(asset)[1]
+        end)
+        
+        if success and result then
+            content = { result }
             importCache[asset] = content
             return unpack(content)
         else
-            warn("<OH> Ошибка в коде " .. asset .. ": " .. err)
-            return
+            warn("<OH> Ошибка загрузки ассета Roblox: " .. asset)
+            error("ASSET_NOT_FOUND")
         end
     else
-        warn("<OH> 404 Не найден файл: " .. url)
-        error("STOP")
+        -- 2. Обработка файлов с GitHub
+        local baseUrl = "https://raw.githubusercontent.com/" .. user .. "/Hyd/" .. branch .. "/"
+        
+        -- Исправляем пути под твой репозиторий (Маленькие буквы -> Большие)
+        local fixedAsset = asset:gsub("^objects/", "Objects/")
+                                :gsub("^methods/", "Methods/")
+                                :gsub("^ui/controls/", "ui/Controls/")
+                                :gsub("^ui/modules/", "ui/Modules/")
+
+        -- Формируем финальную ссылку (добавляем .lua, если его нет)
+        local url = baseUrl .. fixedAsset
+        if not url:find("%.lua$") then
+            url = url .. ".lua"
+        end
+
+        local success, result = pcall(game.HttpGet, game, url)
+        
+        -- Запасной вариант: если с .lua не нашло, пробуем без него
+        if not success or (type(result) == "string" and result:find("404")) then
+            success, result = pcall(game.HttpGet, game, baseUrl .. fixedAsset)
+        end
+
+        if success and result and not (type(result) == "string" and result:find("404")) and #result > 10 then
+            local f, err = loadstring(result, asset)
+            if f then
+                content = { f() }
+                importCache[asset] = content
+                return unpack(content)
+            else
+                warn("<OH> Ошибка компиляции модуля " .. asset .. ": " .. err)
+                error("LUA_COMPILE_ERROR")
+            end
+        else
+            -- Вывод подробной отладки в консоль F9
+            print("-----------------------------------------")
+            warn("<OH> ОШИБКА 404: Файл не найден!")
+            print("Ассет (Asset): " .. asset)
+            print("Пытался загрузить тут: " .. url)
+            print("-----------------------------------------")
+            error("HTTP_404")
+        end
     end
 end
 
--- Базовая настройка среды
+-- Настройка глобальных методов
 local globalMethods = {
-    checkCaller = checkcaller, newCClosure = newcclosure, hookFunction = hookfunction or detour_function,
-    getGc = getgc, getInfo = debug.getinfo, getSenv = getsenv, getMenv = getmenv,
-    getConnections = get_signal_cons or getconnections, getHui = gethui or get_hidden_gui,
-    setReadOnly = setreadonly, isReadOnly = isreadonly, readFile = readfile, writeFile = writefile
+    checkCaller = checkcaller,
+    newCClosure = newcclosure,
+    hookFunction = hookfunction or detour_function,
+    getGc = getgc,
+    getInfo = debug.getinfo,
+    getSenv = getsenv,
+    getMenv = getmenv,
+    getContext = getthreadcontext or (syn and syn.get_thread_identity),
+    getConnections = getconnections or get_signal_cons,
+    getScriptClosure = getscriptclosure,
+    getNamecallMethod = getnamecallmethod,
+    getCallingScript = getcallingscript,
+    getLoadedModules = getloadedmodules,
+    getConstants = debug.getconstants or getconstants,
+    getUpvalues = debug.getupvalues or getupvalues,
+    getProtos = debug.getprotos or getprotos,
+    getMetatable = getrawmetatable or debug.getmetatable,
+    getHui = gethui or get_hidden_gui,
+    setClipboard = setclipboard,
+    setReadOnly = setreadonly,
+    isReadOnly = isreadonly,
+    readFile = readfile,
+    writeFile = writefile,
+    makeFolder = makefolder,
+    isFile = isfile,
+    isFolder = isfolder
 }
-environment.oh = { Events = {}, Hooks = {}, Cache = importCache, Methods = globalMethods, Exit = function() end }
-for k, v in pairs(globalMethods) do environment[k] = v end
+
+environment.oh = {
+    Events = {},
+    Hooks = {},
+    Cache = importCache,
+    Methods = globalMethods,
+    Constants = {
+        Types = {
+            ["nil"] = "rbxassetid://4800232219",
+            table = "rbxassetid://4666594276",
+            string = "rbxassetid://4666593882",
+            number = "rbxassetid://4666593882",
+            boolean = "rbxassetid://4666593882",
+            userdata = "rbxassetid://4666594723",
+            ["function"] = "rbxassetid://4666593447"
+        }
+    },
+    Exit = function()
+        for _, event in pairs(oh.Events) do event:Disconnect() end
+        local ui = importCache["rbxassetid://11389137937"]
+        if ui then unpack(ui):Destroy() end
+    end
+}
+
+-- Делаем методы доступными глобально
+for name, method in pairs(globalMethods) do
+    environment[name] = method
+end
 environment.import = environment.import
 
--- ЗАГРУЗКА (Проверь, чтобы эти файлы на Гитхабе были с .lua)
+-- ПОСЛЕДОВАТЕЛЬНЫЙ ЗАПУСК
 import("aux")
 import("Methods/string")
 import("Methods/table")
 import("Methods/userdata")
 import("Methods/environment")
 
--- ВАЖНО: Если файл называется Main.lua и лежит в ui/
-import("ui/Main") 
+-- Загружаем основной интерфейс (убедись, что на GitHub это ui/Main.lua)
+import("ui/Main")
