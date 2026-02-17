@@ -31,7 +31,6 @@ end, function(err)
     -- Если всё равно будет ошибка, она выведется в MessageBox
 	warn("<OH> Ошибка загрузки модулей: " .. err)
 end)
-end)
 
 local constants = {
 	opened = UDim2.new(0.5, -325, 0.5, -175),
