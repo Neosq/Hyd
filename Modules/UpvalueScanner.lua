@@ -1,6 +1,6 @@
 local UpvalueScanner = {}
-local Closure = import("objects/Closure")
-local Upvalue = import("objects/Upvalue")
+local Closure = import("Objects/Closure")
+local Upvalue = import("Objects/Upvalue")
 
 local requiredMethods = {
     ["getGc"] = true,
