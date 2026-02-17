@@ -1,5 +1,5 @@
 local Explorer = {}
-local Methods = import("modules/Explorer")
+local Methods = import("Modules/Explorer")
 
 if not hasMethods(Methods.RequiredMethods) then
     return Explorer
